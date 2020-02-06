@@ -8,6 +8,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
@@ -26,14 +27,16 @@ public class MainActivity extends AppCompatActivity {
     private final static String SUBTITLE = "subtitle";
     private final static String TEXT = "text";
     private final static String PREF = "pref";
+    private final static  String keyListBundle = "keyListBundle";
+    private final static String LOG_TAG = "Save data";
     List<Map<String, String>> simpleAdapterContent;
     private SharedPreferences sharedPref;
     private ListView list;
     private String result;
     private String[] content;
-    private static final String keyListBundle = "keyListBundle";
     ArrayList<Integer> saveListBundle = new ArrayList<>();
-    int easyWork = 0;
+    BaseAdapter listContentAdapter;
+
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -44,14 +47,13 @@ public class MainActivity extends AppCompatActivity {
 
         updateList();
         content = prepareContent();
-        final BaseAdapter listContentAdapter = createAdapter(content);
+        listContentAdapter = createAdapter(content);
         list.setAdapter(listContentAdapter);
         listContentAdapter.notifyDataSetChanged();
 
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, final View view, final int position, long id) {
-                easyWork = easyWork + 1;
                 view.animate().setDuration(20).alpha(0)
                         .withEndAction(new Runnable() {
                             @Override
@@ -62,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
                                 view.setAlpha(1);
                             }
                         });
+                list.onSaveInstanceState();
             }
         });
 
@@ -74,13 +77,6 @@ public class MainActivity extends AppCompatActivity {
                 swipeLayout.setRefreshing(false);
             }
         });
-        
-        for (int i = 0; i < easyWork; i++ ){
-            savedInstanceState.get(keyListBundle);
-            int index = saveListBundle.get(i);
-            simpleAdapterContent.remove(index);
-            listContentAdapter.notifyDataSetChanged();
-        }
     }
 
     private void updateList() {
@@ -134,6 +130,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putIntegerArrayList(keyListBundle, saveListBundle);
+        Log.d(LOG_TAG, "onSaveInstanceState");
         //Bundle.putIntegerArrayList(saveListBundle);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        saveListBundle = savedInstanceState.getIntegerArrayList(keyListBundle);
+        int targetPosition;
+        for (int i = 0; i < saveListBundle.size(); i++ ){
+            targetPosition = saveListBundle.get(i).intValue();
+            simpleAdapterContent.remove(targetPosition);
+            listContentAdapter.notifyDataSetChanged();
+        }
+        Log.d(LOG_TAG, "onRestoreInstanceState");
     }
 }
